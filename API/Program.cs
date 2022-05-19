@@ -1,23 +1,28 @@
-
+using API.Extentions;
 using API.Helpers;
-using Core.Interfaces;
+using API.Middleware;
 using Infrastructure.Data;
-using Infrastructure.Data.SeedData;
 using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
 
-builder.Services.AddScoped<IProductRepository, ProductRepository>();
-builder.Services.AddScoped(typeof(IGenericRepository<>), (typeof(GenericRepository<>)));
+
+
 builder.Services.AddAutoMapper(typeof(MappingProfiles));
 
 builder.Services.AddControllers();
+
+builder.Services.AddApplicationServices();
+builder.Services.AddSwaggerDocumentation();
+
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen();
-builder.Services.AddDbContext<StoreContext>(x=> x.UseSqlite(builder.Configuration.GetConnectionString("DefaultConnection")));
+
+builder.Services.AddDbContext<StoreContext>(x => x.UseSqlite(builder.Configuration.GetConnectionString("DefaultConnection")));
+
+
 
 var app = builder.Build();
 
@@ -25,30 +30,30 @@ using (var scope = app.Services.CreateScope())
 {
     var services = scope.ServiceProvider;
     var loggerFactory = services.GetRequiredService<ILoggerFactory>();
-    try 
+    try
     {
         var context = services.GetRequiredService<StoreContext>();
         await context.Database.MigrateAsync();
-        await StoreContextSeed.SeedAsync(context,loggerFactory);
+        await StoreContextSeed.SeedAsync(context, loggerFactory);
     }
     catch (Exception ex)
     {
-            var logger = loggerFactory.CreateLogger<Program>();
-            logger.LogError(ex,"An error code during migration");
+        var logger = loggerFactory.CreateLogger<Program>();
+        logger.LogError(ex, "An error code during migration");
     }
 }
+app.UseMiddleware<ExceptionMiddleware>();
 
-// Configure the HTTP request pipeline.
-if (app.Environment.IsDevelopment())
-{
-    app.UseSwagger();
-    app.UseSwaggerUI();
-}
+
+
+app.UseStatusCodePagesWithReExecute("errors/{0}");
 
 app.UseHttpsRedirection();
 app.UseStaticFiles();
 
 app.UseAuthorization();
+
+app.UseSwaggerDocumention();
 
 app.MapControllers();
 
