@@ -12,7 +12,7 @@ namespace Infrastructure.Data.SeedData
     public class GenericRepository<T> : IGenericRepository<T> where T : BaseEntity
     {
         private readonly StoreContext _context;
-       
+
         public GenericRepository(StoreContext context)
         {
             _context = context;
@@ -20,7 +20,7 @@ namespace Infrastructure.Data.SeedData
 
         public async Task<T> GetByIdAsync(int id)
         {
-           return await _context.Set<T>().FindAsync(id);
+            return await _context.Set<T>().FindAsync(id);
         }
 
         public async Task<IReadOnlyList<T>> ListAllAsync()
@@ -36,8 +36,17 @@ namespace Infrastructure.Data.SeedData
         {
             return await ApplySpecification(spec).ToListAsync();
         }
-        private IQueryable<T> ApplySpecification(ISpecification<T> spec) {
-            return SpecificationEvaluator<T>.GetQuery(_context.Set<T>().AsQueryable(),spec);
+
+        public async Task<int> CountAsync(ISpecification<T> spec)
+        {
+            return await ApplySpecification(spec).CountAsync();
         }
+
+        private IQueryable<T> ApplySpecification(ISpecification<T> spec)
+        {
+            return SpecificationEvaluator<T>.GetQuery(_context.Set<T>().AsQueryable(), spec);
+        }
+
+
     }
 }

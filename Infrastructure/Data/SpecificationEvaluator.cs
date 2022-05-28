@@ -4,7 +4,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Infrastructure.Data
 {
-    public class SpecificationEvaluator<TEntity> where TEntity: BaseEntity
+    public class SpecificationEvaluator<TEntity> where TEntity : BaseEntity
     {
         public static IQueryable<TEntity> GetQuery(IQueryable<TEntity> inputQuery, ISpecification<TEntity> specs)
         {
@@ -14,10 +14,25 @@ namespace Infrastructure.Data
                 query = query.Where(specs.Criteria);
             }
 
-            query = specs.Includes.Aggregate(query,(current, include) => current.Include(include));
+            if (specs.OrderBy != null)
+            {
+                query = query.OrderBy(specs.OrderBy);
+            }
+
+            if (specs.OrderByDescending != null)
+            {
+                query = query.OrderByDescending(specs.OrderByDescending);
+            }
+
+            if (specs.IsPagingEnabled)
+            {
+                query = query.Skip(specs.Skip).Take(specs.Take);
+            }
+
+            query = specs.Includes.Aggregate(query, (current, include) => current.Include(include));
 
             return query;
         }
-        
+
     }
 }
